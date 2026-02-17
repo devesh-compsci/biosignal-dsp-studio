@@ -6,7 +6,7 @@ from dsp.transforms.fft import compute_fft
 # ---- TEST ----    
 fs = 1000
 t = np.linspace(0,1,fs)
-signal = np.sin(2*np.pi*5*t) + 0.5*np.sin(2*np.pi*50*t)
+signal = np.sin(2*np.pi*5*t) + 0.5*np.sin(2*np.pi*50*t) 3*np.sin(1*np.pi*100*t)
 
 filtered = butter_lowpass(signal, cutoff=10, fs = fs)
 
