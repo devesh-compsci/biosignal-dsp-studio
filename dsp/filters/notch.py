@@ -18,7 +18,7 @@ class NotchFilter:
     def frequency_response(self, fs):
 
         b, a = iirnotch(self.freq, self.Q, fs)
-        w, h = freqz(b, a, fs=fs)
+        w, h = freqz(b, a, worN=2048,  fs=fs)
 
         return w, np.abs(h)
 

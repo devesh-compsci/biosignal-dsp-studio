@@ -5,9 +5,11 @@ matplotlib.use("Qt5Agg")
 
 from dsp.filters.butterworth import ButterworthFilter
 from dsp.filters.notch import NotchFilter
+from dsp.filters.moving_average import MovingAverageFilter
 from dsp.filter_chain import FilterChain
 from dsp.transforms.fft import compute_fft
 
+from dsp.features.ecg import detect_r_peaks, heart_rate
 
 fs = 1000
 t = np.arange(0, 1, 1/fs)
@@ -20,10 +22,12 @@ signal = (
 
 chain = FilterChain()
 
+chain.add_filter(MovingAverageFilter(window_size=10))
 chain.add_filter(NotchFilter(50))
-chain.add_filter(ButterworthFilter("low", cutoff=20))
+chain.add_filter(ButterworthFilter("low", cutoff=80))
 
 filtered = chain.apply(signal, fs)
+
 
 
 # ---- TIME DOMAIN ----
