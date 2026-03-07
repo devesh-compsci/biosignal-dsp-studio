@@ -1,17 +1,10 @@
-import numpy as np
-import matplotlib.pyplot as plt
-from dsp.filters.butterworth import butter_lowpass
-from dsp.transforms.fft import compute_fft
+from PyQt5.QtWidgets import QApplication
+from ui.main_window import MainWindow
+import sys
 
-# ---- TEST ----    
-fs = 1000
-t = np.linspace(0,1,fs)
-signal = np.sin(2*np.pi*5*t) + 0.5*np.sin(2*np.pi*50*t) + 3*np.sin(2*np.pi*100*t)
+app = QApplication(sys.argv)
 
-filtered = butter_lowpass(signal, cutoff=10, fs = fs)
+window = MainWindow()
+window.show()
 
-plt.figure()
-plt.plot(t, signal, label='RAW')
-plt.plot(t, filtered, label='FILTERED')
-plt.legend()
-plt.show()
+sys.exit(app.exec())
