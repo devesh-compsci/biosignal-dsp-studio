@@ -9,7 +9,7 @@ from dsp.filters.moving_average import MovingAverageFilter
 from dsp.filter_chain import FilterChain
 from dsp.transforms.fft import compute_fft
 
-from dsp.features.ecg import detect_r_peak, heart_rate
+from dsp.features.ecg import detect_r_peaks, heart_rate
 
 
 fs = 1000
@@ -34,14 +34,14 @@ filtered = chain.apply(signal, fs)
 
 # ---- FEATURES ----
 
-peaks = detect_r_peak(filtered, fs)
+peaks = detect_r_peaks(filtered, fs)
 hr = heart_rate(peaks, fs)
 
-print("Detected beats:", len(peaks))
+print("\n---------->  Detected beats:", len(peaks))
 
 if hr is not None:
-    print("Average HR:", np.mean(hr))
-
+    print("\n---------->  Average HR:", np.mean(hr))
+print("\n\n")
 # ---- TIME DOMAIN ----
 
 plt.figure()

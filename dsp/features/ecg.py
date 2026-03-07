@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import find_peaks
 
-def detect_r_peak(signal, fs):
+def detect_r_peaks(signal, fs):
 
     # Min distance between heart-beats (~240~ BPS maximum)
     min_distance = int(0.25 * fs)
