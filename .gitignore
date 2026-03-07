@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+*.log
+*.line
+line
+*__pycache__
+dsp/transforms/__pycache__/
