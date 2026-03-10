@@ -103,6 +103,8 @@ class MainWindow(QMainWindow):
         freq, raw_fft = compute_fft(self.signal, self.fs)
         freq, filtered_fft = compute_fft(filtered, self.fs)
 
+        w, h = chain.frequency_response(self.fs)
+
 
         t = np.arange(len(self.signal)) / self.fs
 
@@ -138,7 +140,21 @@ class MainWindow(QMainWindow):
 
         self.freq_plot.setLabel('left', 'Magnitude')
         self.freq_plot.setLabel('bottom', 'Frequency', units='Hz')
-        self.freq_plot.showGrid(x=False, y=True, alpha=0.3)
+        self.freq_plot.showGrid(x=True, y=False, alpha=0.3)
+        self.freq_plot.setXRange(0,150)
+
+        # FILTER DESIGN PLOT TO UI
+        self.filter_plot.clear()
+
+        pen_response = pg.mkPen('m', width=2)
+
+        self.filter_plot.plot(w, h, pen=pen_response)
+
+        self.filter_plot.setLabel('left', 'Magnitude')
+        self.filter_plot.setLabel('bottom', 'Frequency', units='Hz')
+        self.filter_plot.showGrid(x=True, y=False)
+
+        self.filter_plot.setXRange(0,150)
 
 
 
