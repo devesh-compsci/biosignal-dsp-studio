@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QPushButton, QFileDialog,
-    QVBoxLayout, QWidget
+    QVBoxLayout, QWidget, QTabWidget, QHBoxLayout
 )
 
 import numpy as np
@@ -11,6 +11,8 @@ from data.loader import load_txt
 from dsp.filter_chain import FilterChain
 from dsp.filters.notch import NotchFilter
 from dsp.filters.butterworth import ButterworthFilter
+
+from dsp.transforms.fft import compute_fft
 
 from dsp.features.ecg import detect_r_peaks
 
@@ -27,23 +29,46 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Biosignal DSP Studio")
 
-        self.graph = pg.PlotWidget()
-        self.graph.setLabel('left', 'Amplitude')
-        self.graph.setLabel('bottom', 'Time', units='s')
-        self.graph.getAxis('bottom').enableAutoSIPrefix(False)
-        self.graph.showGrid(x=True, y=True, alpha=0.3)
+        self.time_plot = pg.PlotWidget()
+        self.freq_plot = pg.PlotWidget()
+        self.filter_plot = pg.PlotWidget()
+
+        self.time_plot.setLabel('left', 'Amplitude')
+        self.time_plot.setLabel('bottom', 'Time', units='s')
+        self.time_plot.getAxis('bottom').enableAutoSIPrefix(False)
+        self.time_plot.showGrid(x=True, y=True, alpha=0.3)
+
+        tabs = QTabWidget()
+        tabs.addTab(self.freq_plot, "Frequency Domain")
+        tabs.addTab(self.filter_plot, "Filter Response")
 
         self.load_btn = QPushButton("Load Signal")
         self.load_btn.clicked.connect(self.load_signal)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.load_btn)
-        layout.addWidget(self.graph)
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(self.time_plot)
+        left_layout.addWidget(tabs)
+
+        left_panel = QWidget()
+        left_panel.setLayout(left_layout)
+
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(self.load_btn)
+        right_layout.addStretch()
+
+        right_panel = QWidget()
+        right_panel.setLayout(right_layout)
+
+
+        main_layout = QHBoxLayout()
+        main_layout.addWidget(left_panel,4)
+        main_layout.addWidget(right_panel,1)
 
         container = QWidget()
-        container.setLayout(layout)
+        container.setLayout(main_layout)
 
         self.setCentralWidget(container)
+
 
         self.signal = None
         self.start_time = 0
@@ -74,20 +99,26 @@ class MainWindow(QMainWindow):
         chain.add_filter(ButterworthFilter("high",cutoff = 0.5, order=2))
 
         filtered = chain.apply(self.signal, self.fs)
-        
+
+        freq, raw_fft = compute_fft(self.signal, self.fs)
+        freq, filtered_fft = compute_fft(filtered, self.fs)
+
+
         t = np.arange(len(self.signal)) / self.fs
 
         peaks = detect_r_peaks(filtered, self.fs)
 
-        self.graph.clear()
+        
+        # TIME DOMAIN GRAPH TO UI
+        self.time_plot.clear()
         
         pen_raw = pg.mkPen('b',width=1)
         pen_filtered = pg.mkPen('r',width=2)
         
-        self.graph.plot(t, self.signal, pen=pen_raw)
-        self.graph.plot(t, filtered, pen=pen_filtered)
+        self.time_plot.plot(t, self.signal, pen=pen_raw)
+        self.time_plot.plot(t, filtered, pen=pen_filtered)
 
-        self.graph.plot(
+        self.time_plot.plot(
             t[peaks],
             filtered[peaks],
             pen=None,
@@ -95,3 +126,8 @@ class MainWindow(QMainWindow):
             symbolBrush='g',
             symbolSize=8
         )
+
+        # FREQUENCY DOMAIN GRAPH TO UI
+        self.freq_plot.clear()
+
+        pen_raw
