@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.sample_rate_input.setValue(1000)
 
         self.filter_type = QComboBox()
-        self.filter_type.addItems(["Lowpass", "Highpass", "Notch", "Band Pass")
+        self.filter_type.addItems(["Lowpass", "Highpass", "Notch", "Band Pass"])
 
         self.cutoff_input = QSpinBox()
         self.cutoff_input.setRange(1, 500)
@@ -74,7 +74,32 @@ class MainWindow(QMainWindow):
 
         right_layout = QVBoxLayout()
         
-        right_layout.addWidget
+        right_layout.addWidget(QLabel("INPUT CONFIGURATION"))
+        right_layout.addWidget(self.load_btn)
+        right_layout.addWidget(QLabel("Sample Rate"))
+        right_layout.addWidget(self.sample_rate_input)
+        right_layout.addWidget(QLabel("Signal Type"))
+        right_layout.addWidget(self.signal_type)
+
+        right_layout.addSpacing(20)
+
+        right_layout.addWidget(QLabel("DSP Pipeline"))
+        right_layout.addWidget(QLabel("Filter Type"))
+        right_layout.addWidget(self.filter_type)
+
+        right_layout.addWidget(QLabel("Cutoff Frequency (Hz)"))
+        right_layout.addWidget(self.cutoff_input)
+
+        right_layout.addWidget(self.apply_btn)
+        right_layout.addWidget(self.reset_btn)
+
+        right_layout.addStretch()
+
+
+        right_panel = QWidget()
+        right_panel.setLayout(right_layout)
+
+        self.apply_btn.clicked.connect(self.apply_pipeline)
 
 
         main_layout = QHBoxLayout()
@@ -92,6 +117,38 @@ class MainWindow(QMainWindow):
         self.duration = 2
         self.fs = 1000
         self.channel_index = 0
+
+    def apply_pipeline(self):
+        
+        if self.signal is None:
+            return
+
+        self.fs = self.sample_rate_input.value()
+
+        chain = FilterChain()
+
+        ftype = self.filter_type.currentText()
+        cutoff = self.cutoff_input.value()
+
+        if ftype == "Lowpass":
+            chain.add_filter(ButterworthFilter("low", cutoff))
+
+        elif ftype == "Highpass":
+            chain.add_filter(ButterworthFilter("high", cutoff))
+
+        elif ftype == "Bandpass":
+            chain.add_filter(ButterworthFilter("band", (5, cutoff)))
+
+        filtered = chain.apply(self.signal, self.fs)
+
+        t = np.arange(len(self.signal)) / self.fs
+
+        self.time_plot.clear()
+
+        self.time_plot.plot(t, self.signal, pen='b')
+        self.time_plot.plot(t, filtered, pen='r')
+
+
 
     def load_signal(self):
 
@@ -113,7 +170,7 @@ class MainWindow(QMainWindow):
         chain = FilterChain()
         chain.add_filter(NotchFilter(50))
         chain.add_filter(ButterworthFilter("low", 40))
-        chain.add_filter(ButterworthFilter("high",cutoff = 0.5, order=2))
+        chain.add_filter(ButterworthFilter("high", cutoff=0.5, order=2))
 
         filtered = chain.apply(self.signal, self.fs)
 
@@ -126,7 +183,9 @@ class MainWindow(QMainWindow):
         t = np.arange(len(self.signal)) / self.fs
 
         peaks = detect_r_peaks(filtered, self.fs)
-
+        
+        self.signal = sig.data
+        self.apply_pipeline()
         
         # TIME DOMAIN GRAPH TO UI
         self.time_plot.clear()
@@ -172,21 +231,3 @@ class MainWindow(QMainWindow):
         self.filter_plot.showGrid(x=True, y=False)
 
         self.filter_plot.setXRange(0,150)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
