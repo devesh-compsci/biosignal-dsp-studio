@@ -130,4 +130,30 @@ class MainWindow(QMainWindow):
         # FREQUENCY DOMAIN GRAPH TO UI
         self.freq_plot.clear()
 
-        pen_raw
+        pen_raw = pg.mkPen('b', width=1)
+        pen_filtered = pg.mkPen('r', width=2)
+
+        self.freq_plot.plot(freq, raw_fft, pen=pen_raw)
+        self.freq_plot.plot(freq, filtered_fft, pen=pen_filtered)
+
+        self.freq_plot.setLabel('left', 'Magnitude')
+        self.freq_plot.setLabel('bottom', 'Frequency', units='Hz')
+        self.freq_plot.showGrid(x=False, y=True, alpha=0.3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
