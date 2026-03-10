@@ -1,4 +1,5 @@
-# 🧠 Biosignal DSP Studio
+A lightweight DSP workstation for biomedical signal analysis.
+# Biosignal DSP Studio
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![UI](https://img.shields.io/badge/UI-PyQt5-green)
@@ -19,7 +20,9 @@ The project focuses on understanding and applying **classical DSP techniques** t
 
 ---
 
-# ✨ Features
+#  Features
+
+
 
 ## 📂 Signal Loading
 
