@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import (
     QMainWindow, QPushButton, QFileDialog,
-    QVBoxLayout, QWidget, QTabWidget, QHBoxLayout
+    QVBoxLayout, QWidget, QTabWidget, QHBoxLayout,
+    QLabel, QComboBox, QSpinBox
 )
 
 import numpy as np
@@ -44,6 +45,23 @@ class MainWindow(QMainWindow):
 
         self.load_btn = QPushButton("Load Signal")
         self.load_btn.clicked.connect(self.load_signal)
+
+        self.signal_type = QComboBox()
+        self.signal_type.addItems(["ECG", "EEG", "Custom"])
+
+        self.sample_rate_input = QSpinBox()
+        self.sample_rate_input.setRange(1, 10000)
+        self.sample_rate_input.setValue(1000)
+
+        self.filter_type = QComboBox()
+        self.filter_type.addItems(["Lowpass", "Highpass", "Notch", "Band Pass")
+
+        self.cutoff_input = QSpinBox()
+        self.cutoff_input.setRange(1, 500)
+        self.cutoff_input.setValue(50)
+
+        self.apply_btn = QPushButton("Apply")
+        self.reset_btn = QPushButton("Reset")
 
         left_layout = QVBoxLayout()
         left_layout.addWidget(self.time_plot)
