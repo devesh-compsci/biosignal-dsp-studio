@@ -70,12 +70,11 @@ class MainWindow(QMainWindow):
         left_panel = QWidget()
         left_panel.setLayout(left_layout)
 
-        right_layout = QVBoxLayout()
-        right_layout.addWidget(self.load_btn)
-        right_layout.addStretch()
 
-        right_panel = QWidget()
-        right_panel.setLayout(right_layout)
+
+        right_layout = QVBoxLayout()
+        
+        right_layout.addWidget
 
 
         main_layout = QHBoxLayout()
