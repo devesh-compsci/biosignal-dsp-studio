@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.sample_rate_input.setValue(1000)
 
         self.filter_type = QComboBox()
-        self.filter_type.addItems(["Lowpass", "Highpass", "Notch", "Band Pass"])
+        self.filter_type.addItems(["Lowpass", "Highpass", "Notch", "BandPass"])
 
         self.cutoff_input = QSpinBox()
         self.cutoff_input.setRange(1, 500)
@@ -64,8 +64,8 @@ class MainWindow(QMainWindow):
         self.reset_btn = QPushButton("Reset")
 
         left_layout = QVBoxLayout()
-        left_layout.addWidget(self.time_plot)
-        left_layout.addWidget(tabs)
+        left_layout.addWidget(self.time_plot, 3)
+        left_layout.addWidget(tabs, 2)
 
         left_panel = QWidget()
         left_panel.setLayout(left_layout)
@@ -100,6 +100,7 @@ class MainWindow(QMainWindow):
         right_panel.setLayout(right_layout)
 
         self.apply_btn.clicked.connect(self.apply_pipeline)
+        self.reset_btn.clicked.connect(self.reset_pipeline)
 
 
         main_layout = QHBoxLayout()
@@ -136,6 +137,9 @@ class MainWindow(QMainWindow):
         elif ftype == "Highpass":
             chain.add_filter(ButterworthFilter("high", cutoff))
 
+        elif ftype == "Notch":
+            chain.add_filter(NotchFilter(cutoff))
+
         elif ftype == "Bandpass":
             chain.add_filter(ButterworthFilter("band", (5, cutoff)))
 
@@ -148,7 +152,14 @@ class MainWindow(QMainWindow):
         self.time_plot.plot(t, self.signal, pen='b')
         self.time_plot.plot(t, filtered, pen='r')
 
+    def reset_pipeline(self):
 
+        self.filter_type.setCurrentIndex(0)
+        self.cutoff_input.setValue(50)
+        self.sample_rate_input.setValue(1000)
+
+        if self.signal is not None:
+            self.apply_pipeline()
 
     def load_signal(self):
 
@@ -183,6 +194,12 @@ class MainWindow(QMainWindow):
         t = np.arange(len(self.signal)) / self.fs
 
         peaks = detect_r_peaks(filtered, self.fs)
+        
+        if len(peaks) > 1:
+            rr = np.diff(peaks) / self.fs
+            hr = 60 / np.mean(rr)
+        else:
+            hr = 0
         
         self.signal = sig.data
         self.apply_pipeline()
