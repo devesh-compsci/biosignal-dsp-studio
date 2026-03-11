@@ -1,3 +1,4 @@
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QMainWindow, QPushButton, QFileDialog,
     QVBoxLayout, QWidget, QTabWidget, QHBoxLayout,
@@ -64,11 +65,31 @@ class MainWindow(QMainWindow):
 
         self.hr_label = QLabel("Heart Rate: -- BPM")
 
-        # Filter chain display list
         self.chain_list = QListWidget()
         self.chain_list.setMaximumHeight(100)
 
+        # Time window controls
+        self.start_time_input = QSpinBox()
+        self.start_time_input.setRange(0, 9999)
+        self.start_time_input.setValue(0)
+        self.start_time_input.valueChanged.connect(self.apply_pipeline)
+
+        self.duration_input = QSpinBox()
+        self.duration_input.setRange(1, 9999)
+        self.duration_input.setValue(2)
+        self.duration_input.valueChanged.connect(self.apply_pipeline)
+
         left_layout = QVBoxLayout()
+        
+        left_header = QHBoxLayout()
+        left_header.addWidget(QLabel("Start (s)"))
+        left_header.addWidget(self.start_time_input)
+        left_header.addWidget(QLabel("Length (s)"))
+        left_header.addWidget(self.duration_input)
+
+        left_layout.addLayout(left_header)
+        left_layout.setAlignment(left_header, Qt.AlignRight)
+
         left_layout.addWidget(self.time_plot, 3)
         left_layout.addWidget(tabs, 2)
 
@@ -76,7 +97,6 @@ class MainWindow(QMainWindow):
         left_panel.setLayout(left_layout)
 
         right_layout = QVBoxLayout()
-
         right_layout.addWidget(QLabel("INPUT CONFIGURATION"))
         right_layout.addWidget(self.load_btn)
         right_layout.addWidget(QLabel("Sample Rate"))
@@ -120,11 +140,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
         self.signal = None
-        self.start_time = 0
-        self.duration = 2
         self.fs = 1000
         self.channel_index = 0
-        self.active_chain = None  # track last applied chain
+        self.active_chain = None
 
     def _build_ecg_chain(self):
         chain = FilterChain()
@@ -134,14 +152,20 @@ class MainWindow(QMainWindow):
         return chain
 
     def _on_signal_type_changed(self, signal_type):
-        # Only show HR label for ECG
         self.hr_label.setVisible(signal_type == "ECG")
+
+    def _get_window(self):
+        start = self.start_time_input.value()
+        length = self.duration_input.value()
+        i0 = int(start * self.fs)
+        i1 = int((start + length) * self.fs)
+        i1 = min(i1, len(self.signal))
+        return i0, i1
 
     def _update_chain_list(self, chain):
         self.chain_list.clear()
         for f in chain.filters:
             name = type(f).__name__
-            
             cutoff = getattr(f, 'cutoff', None) or getattr(f, 'freq', None) or getattr(f, 'w0', None)
             label = f"{name} : {cutoff} Hz" if cutoff is not None else name
             self.chain_list.addItem(label)
@@ -173,16 +197,19 @@ class MainWindow(QMainWindow):
 
         self._update_chain_list(chain)
 
-        t = np.arange(len(self.signal)) / self.fs
+        i0, i1 = self._get_window()
+        sig_window = self.signal[i0:i1]
+        filtered_window = filtered[i0:i1]
+        t = np.arange(i1 - i0) / self.fs + self.start_time_input.value()
 
-        # Time Plot
+        # TIME DOMAIN
         self.time_plot.clear()
-        self.time_plot.plot(t, self.signal, pen=pg.mkPen('b', width=1))
-        self.time_plot.plot(t, filtered, pen=pg.mkPen('r', width=2))
+        self.time_plot.plot(t, sig_window, pen=pg.mkPen('b', width=1))
+        self.time_plot.plot(t, filtered_window, pen=pg.mkPen('r', width=2))
 
         # FREQUENCY DOMAIN
-        freq, raw_fft = compute_fft(self.signal, self.fs)
-        freq, filtered_fft = compute_fft(filtered, self.fs)
+        freq, raw_fft = compute_fft(sig_window, self.fs)
+        freq, filtered_fft = compute_fft(filtered_window, self.fs)
 
         self.freq_plot.clear()
         self.freq_plot.plot(freq, raw_fft, pen=pg.mkPen('b', width=1))
@@ -220,8 +247,8 @@ class MainWindow(QMainWindow):
             path,
             fs=self.fs,
             index=self.channel_index,
-            start_time=self.start_time,
-            duration=self.duration
+            start_time=self.start_time_input.value(),
+            duration=self.duration_input.value()
         )
 
         self.signal = sig.data
@@ -229,14 +256,12 @@ class MainWindow(QMainWindow):
         chain = self._build_ecg_chain()
         filtered = chain.apply(self.signal, self.fs)
 
-        freq, raw_fft = compute_fft(self.signal, self.fs)
-        freq, filtered_fft = compute_fft(filtered, self.fs)
+        i0, i1 = self._get_window()
+        sig_window = self.signal[i0:i1]
+        filtered_window = filtered[i0:i1]
+        t = np.arange(i1 - i0) / self.fs + self.start_time_input.value()
 
-        w, h = chain.frequency_response(self.fs)
-
-        t = np.arange(len(self.signal)) / self.fs
-
-        # HR — only computed and shown for ECG
+        # HR — ECG only
         if self.signal_type.currentText() == "ECG":
             peaks = detect_r_peaks(filtered, self.fs)
             if len(peaks) > 1:
@@ -246,24 +271,28 @@ class MainWindow(QMainWindow):
                 hr = 0
             self.hr_label.setText(f"Heart Rate: {hr:.1f} BPM")
             self.hr_label.setVisible(True)
+            peaks_window = peaks[(peaks >= i0) & (peaks < i1)] - i0
         else:
-            peaks = []
+            peaks_window = []
             self.hr_label.setVisible(False)
 
         self._update_chain_list(chain)
 
         # TIME DOMAIN
         self.time_plot.clear()
-        self.time_plot.plot(t, self.signal, pen=pg.mkPen('b', width=1))
-        self.time_plot.plot(t, filtered, pen=pg.mkPen('r', width=2))
+        self.time_plot.plot(t, sig_window, pen=pg.mkPen('b', width=1))
+        self.time_plot.plot(t, filtered_window, pen=pg.mkPen('r', width=2))
 
-        if len(peaks) > 1:
+        if len(peaks_window) > 1:
             self.time_plot.plot(
-                t[peaks], filtered[peaks],
+                t[peaks_window], filtered_window[peaks_window],
                 pen=None, symbol='o', symbolBrush='g', symbolSize=8
             )
 
         # FREQUENCY DOMAIN
+        freq, raw_fft = compute_fft(sig_window, self.fs)
+        freq, filtered_fft = compute_fft(filtered_window, self.fs)
+
         self.freq_plot.clear()
         self.freq_plot.plot(freq, raw_fft, pen=pg.mkPen('b', width=1))
         self.freq_plot.plot(freq, filtered_fft, pen=pg.mkPen('r', width=2))
@@ -273,9 +302,13 @@ class MainWindow(QMainWindow):
         self.freq_plot.setXRange(0, 150)
 
         # FILTER RESPONSE
+        w, h = chain.frequency_response(self.fs)
+
         self.filter_plot.clear()
         self.filter_plot.plot(w, h, pen=pg.mkPen('m', width=2))
         self.filter_plot.setLabel('left', 'Magnitude')
         self.filter_plot.setLabel('bottom', 'Frequency', units='Hz')
         self.filter_plot.showGrid(x=True, y=False)
         self.filter_plot.setXRange(0, 150)
+
+        self.apply_pipeline()
