@@ -72,15 +72,15 @@ class MainWindow(QMainWindow):
         self.start_time_input = QSpinBox()
         self.start_time_input.setRange(0, 9999)
         self.start_time_input.setValue(0)
-        self.start_time_input.valueChanged.connect(self.apply_pipeline)
+        self.start_time_input.valueChanged.connect(self._render_pipeline)
 
         self.duration_input = QSpinBox()
         self.duration_input.setRange(1, 9999)
         self.duration_input.setValue(2)
-        self.duration_input.valueChanged.connect(self.apply_pipeline)
+        self.duration_input.valueChanged.connect(self._render_pipeline)
 
         left_layout = QVBoxLayout()
-        
+
         left_header = QHBoxLayout()
         left_header.addWidget(QLabel("Start (s)"))
         left_header.addWidget(self.start_time_input)
@@ -108,7 +108,6 @@ class MainWindow(QMainWindow):
 
         right_layout.addSpacing(20)
 
-        right_layout.addWidget(QLabel("DSP Pipeline"))
         right_layout.addWidget(QLabel("Filter Type"))
         right_layout.addWidget(self.filter_type)
 
@@ -154,6 +153,16 @@ class MainWindow(QMainWindow):
     def _on_signal_type_changed(self, signal_type):
         self.hr_label.setVisible(signal_type == "ECG")
 
+        if self.signal is None:
+            return
+
+        if signal_type == "ECG":
+            self.active_chain = self._build_ecg_chain()
+        else:
+            self.active_chain = FilterChain()
+
+        self._render_pipeline()
+
     def _get_window(self):
         start = self.start_time_input.value()
         length = self.duration_input.value()
@@ -178,24 +187,29 @@ class MainWindow(QMainWindow):
         ftype = self.filter_type.currentText()
         cutoff = self.cutoff_input.value()
 
-        if self.signal_type.currentText() == "ECG":
-            chain = self._build_ecg_chain()
-        else:
-            chain = FilterChain()
+        if self.active_chain is None:
+            self.active_chain = FilterChain()
 
         if ftype == "Lowpass":
-            chain.add_filter(ButterworthFilter("low", cutoff))
+            self.active_chain.add_filter(ButterworthFilter("low", cutoff))
         elif ftype == "Highpass":
-            chain.add_filter(ButterworthFilter("high", cutoff))
+            self.active_chain.add_filter(ButterworthFilter("high", cutoff))
         elif ftype == "Notch":
-            chain.add_filter(NotchFilter(cutoff))
+            self.active_chain.add_filter(NotchFilter(cutoff))
         elif ftype == "BandPass":
-            chain.add_filter(ButterworthFilter("band", (5, cutoff)))
+            self.active_chain.add_filter(ButterworthFilter("band", (5, cutoff)))
 
-        self.active_chain = chain
-        filtered = chain.apply(self.signal, self.fs)
+        self._render_pipeline()
 
-        self._update_chain_list(chain)
+    def _render_pipeline(self):
+        if self.signal is None or self.active_chain is None:
+            return
+
+        self.fs = self.sample_rate_input.value()
+
+        filtered = self.active_chain.apply(self.signal, self.fs)
+
+        self._update_chain_list(self.active_chain)
 
         i0, i1 = self._get_window()
         sig_window = self.signal[i0:i1]
@@ -204,26 +218,44 @@ class MainWindow(QMainWindow):
 
         # TIME DOMAIN
         self.time_plot.clear()
-        self.time_plot.plot(t, sig_window, pen=pg.mkPen('b', width=1))
-        self.time_plot.plot(t, filtered_window, pen=pg.mkPen('r', width=2))
+        self.time_plot.plot(t, sig_window, pen=pg.mkPen(color='#0078D4', width=1))
+        self.time_plot.plot(t, filtered_window, pen=pg.mkPen(color='#FA003F', width=2))
+
+        if self.signal_type.currentText() == "ECG":
+            peaks = detect_r_peaks(filtered, self.fs)
+            if len(peaks) > 1:
+                rr = np.diff(peaks) / self.fs
+                hr = 60 / np.mean(rr)
+            else:
+                hr = 0
+            self.hr_label.setText(f"Heart Rate: {hr:.1f} BPM")
+            self.hr_label.setVisible(True)
+            peaks_window = peaks[(peaks >= i0) & (peaks < i1)] - i0
+            if len(peaks_window) > 0:
+                self.time_plot.plot(
+                    t[peaks_window], filtered_window[peaks_window],
+                    pen=None, symbol='o', symbolBrush='g', symbolSize=8
+                )
+        else:
+            self.hr_label.setVisible(False)
 
         # FREQUENCY DOMAIN
         freq, raw_fft = compute_fft(sig_window, self.fs)
         freq, filtered_fft = compute_fft(filtered_window, self.fs)
 
         self.freq_plot.clear()
-        self.freq_plot.plot(freq, raw_fft, pen=pg.mkPen('b', width=1))
-        self.freq_plot.plot(freq, filtered_fft, pen=pg.mkPen('r', width=2))
+        self.freq_plot.plot(freq, raw_fft, pen=pg.mkPen(color='#0078D4', width=1))
+        self.freq_plot.plot(freq, filtered_fft, pen=pg.mkPen(color='#FA003F', width=2))
         self.freq_plot.setLabel('left', 'Magnitude')
         self.freq_plot.setLabel('bottom', 'Frequency', units='Hz')
         self.freq_plot.showGrid(x=True, y=False, alpha=0.3)
         self.freq_plot.setXRange(0, 150)
 
         # FILTER RESPONSE
-        w, h = chain.frequency_response(self.fs)
+        w, h = self.active_chain.frequency_response(self.fs)
 
         self.filter_plot.clear()
-        self.filter_plot.plot(w, h, pen=pg.mkPen('m', width=2))
+        self.filter_plot.plot(w, h, pen=pg.mkPen(color='#7719AA', width=2))
         self.filter_plot.setLabel('left', 'Magnitude')
         self.filter_plot.setLabel('bottom', 'Frequency', units='Hz')
         self.filter_plot.showGrid(x=True, y=False)
@@ -234,8 +266,12 @@ class MainWindow(QMainWindow):
         self.cutoff_input.setValue(50)
         self.sample_rate_input.setValue(1000)
 
-        if self.signal is not None:
-            self.apply_pipeline()
+        if self.signal_type.currentText() == "ECG":
+            self.active_chain = self._build_ecg_chain()
+        else:
+            self.active_chain = FilterChain()
+
+        self._render_pipeline()
 
     def load_signal(self):
         path, _ = QFileDialog.getOpenFileName(self, "Open Signal")
@@ -253,62 +289,9 @@ class MainWindow(QMainWindow):
 
         self.signal = sig.data
 
-        chain = self._build_ecg_chain()
-        filtered = chain.apply(self.signal, self.fs)
-
-        i0, i1 = self._get_window()
-        sig_window = self.signal[i0:i1]
-        filtered_window = filtered[i0:i1]
-        t = np.arange(i1 - i0) / self.fs + self.start_time_input.value()
-
-        # HR — ECG only
         if self.signal_type.currentText() == "ECG":
-            peaks = detect_r_peaks(filtered, self.fs)
-            if len(peaks) > 1:
-                rr = np.diff(peaks) / self.fs
-                hr = 60 / np.mean(rr)
-            else:
-                hr = 0
-            self.hr_label.setText(f"Heart Rate: {hr:.1f} BPM")
-            self.hr_label.setVisible(True)
-            peaks_window = peaks[(peaks >= i0) & (peaks < i1)] - i0
+            self.active_chain = self._build_ecg_chain()
         else:
-            peaks_window = []
-            self.hr_label.setVisible(False)
+            self.active_chain = FilterChain()
 
-        self._update_chain_list(chain)
-
-        # TIME DOMAIN
-        self.time_plot.clear()
-        self.time_plot.plot(t, sig_window, pen=pg.mkPen('b', width=1))
-        self.time_plot.plot(t, filtered_window, pen=pg.mkPen('r', width=2))
-
-        if len(peaks_window) > 1:
-            self.time_plot.plot(
-                t[peaks_window], filtered_window[peaks_window],
-                pen=None, symbol='o', symbolBrush='g', symbolSize=8
-            )
-
-        # FREQUENCY DOMAIN
-        freq, raw_fft = compute_fft(sig_window, self.fs)
-        freq, filtered_fft = compute_fft(filtered_window, self.fs)
-
-        self.freq_plot.clear()
-        self.freq_plot.plot(freq, raw_fft, pen=pg.mkPen('b', width=1))
-        self.freq_plot.plot(freq, filtered_fft, pen=pg.mkPen('r', width=2))
-        self.freq_plot.setLabel('left', 'Magnitude')
-        self.freq_plot.setLabel('bottom', 'Frequency', units='Hz')
-        self.freq_plot.showGrid(x=True, y=False, alpha=0.3)
-        self.freq_plot.setXRange(0, 150)
-
-        # FILTER RESPONSE
-        w, h = chain.frequency_response(self.fs)
-
-        self.filter_plot.clear()
-        self.filter_plot.plot(w, h, pen=pg.mkPen('m', width=2))
-        self.filter_plot.setLabel('left', 'Magnitude')
-        self.filter_plot.setLabel('bottom', 'Frequency', units='Hz')
-        self.filter_plot.showGrid(x=True, y=False)
-        self.filter_plot.setXRange(0, 150)
-
-        self.apply_pipeline()
+        self._render_pipeline()
