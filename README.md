@@ -362,7 +362,7 @@ Planned enhancements:
 - ECG preprocessing presets
 - Signal navigation slider
 - EEG / EMG processing modules
-- Heart rate variability (HRV) metrics
+- Heart rate variability (HRV) metrics - ON DEVELOPMENT
 - Export filtered signals
 - Real-time signal streaming
 
