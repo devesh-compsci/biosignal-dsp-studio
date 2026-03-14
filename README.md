@@ -1,162 +1,166 @@
-A lightweight DSP workstation for biomedical signal analysis.
 # Biosignal DSP Studio
+
+A lightweight **DSP workstation for biomedical signal analysis** built with Python and PyQt.
 
 ![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
 ![UI](https://img.shields.io/badge/UI-PyQt5-green)
 ![DSP](https://img.shields.io/badge/Focus-Digital%20Signal%20Processing-orange)
 ![Status](https://img.shields.io/badge/status-active-success)
 
-A lightweight **DSP workstation for biomedical signal analysis** built with Python and PyQt.
-
 Biosignal DSP Studio provides an interactive environment for:
 
-- Loading physiological signal recordings
-- Applying digital signal processing pipelines
-- Visualizing signals in **time and frequency domains**
-- Inspecting filter responses
-- Extracting basic physiological metrics such as **heart rate**
+- Loading physiological signal recordings  
+- Building configurable **DSP pipelines**  
+- Visualizing signals in **time and frequency domains**  
+- Inspecting **filter responses**  
+- Extracting physiological metrics such as **heart rate**
 
-The project focuses on understanding and applying **classical DSP techniques** to real biomedical signals like ECG.
+The goal of the project is to explore and apply **classical digital signal processing techniques** to real biomedical signals such as ECG and EMG.
 
 ---
 
-#  Features
+# Screenshots
 
+### Signal Viewer
 
+![Signal Viewer](assets/ss1.png)
 
-## 📂 Signal Loading
+Displays the time-domain waveform with filtered signals and detected ECG R-peaks.
+
+---
+
+### Analysis Panels
+
+![Analysis Panels](assets/ss2.png)
+
+Frequency-domain analysis and filter response visualization for the active DSP pipeline.
+
+---
+
+# Features
+
+## Signal Loading
 
 - Load biosignal recordings from `.txt` files
-- Select specific **channels** from multi-column recordings
-- Load **time-windowed segments** of signals
-- Configurable **sampling rate**
+- Select **channels** from multi-column recordings
+- Load specific **time windows** of signals
+- Configure **sampling rate**
 
 ---
 
-## ⚙️ Digital Signal Processing Pipeline
+## Digital Signal Processing Pipeline
 
-The system allows building configurable DSP chains.
+The application allows users to construct configurable DSP chains.
 
 ### Butterworth Filters
 
-- Low-pass filtering
-- High-pass filtering
-- Band-pass filtering
+Available filters:
 
-Common biomedical applications:
+- Low-pass
+- High-pass
+- Band-pass
 
-- Baseline drift removal
-- Noise suppression
-- Band-limited physiological signals
+Applications include:
 
----
-
-### 🔌 Notch Filter
-
-Removes power-line interference.
-
-Typical use:
-
-- **50 Hz** powerline noise removal
-- **60 Hz** powerline noise removal (US)
+- Baseline drift removal  
+- Noise suppression  
+- Physiological signal isolation  
 
 ---
 
-## 📈 Signal Visualization
+### Notch Filter
+
+Used to remove power-line interference.
+
+Typical configurations:
+
+- **50 Hz** powerline removal  
+- **60 Hz** powerline removal  
+
+---
+
+## Signal Visualization
 
 ### Time Domain Viewer
 
 Displays:
 
-- Raw signal
-- Filtered signal
-- Detected peaks (ECG R-peaks)
+- Raw signal  
+- Filtered signal  
+- Detected ECG R-peaks  
 
 Features:
 
-- Time axis in seconds
-- Grid visualization
-- Interactive zooming (PyQtGraph)
+- Time axis in seconds  
+- Grid visualization  
+- Interactive zooming via **PyQtGraph**
 
 ---
 
 ### Frequency Domain Analysis
 
-Displays **FFT spectrum** of:
+Displays the **FFT spectrum** of:
 
-- Raw signal
-- Filtered signal
+- Raw signal  
+- Filtered signal  
 
-Helps visualize:
+Useful for observing:
 
-- Noise components
-- Filter effectiveness
-- Signal bandwidth
+- Noise components  
+- Signal bandwidth  
+- Filter effectiveness  
 
 ---
 
 ### Filter Response Visualization
 
-Displays the **combined frequency response** of the filter pipeline.
+Displays the **combined frequency response** of the entire filter chain.
 
-This helps understand how the DSP chain shapes the signal.
+This helps understand how the DSP pipeline shapes the signal.
 
 ---
 
-## ❤️ ECG Feature Extraction
+## ECG Feature Extraction
 
 Currently implemented:
 
 - **R-peak detection**
 - **Heart rate estimation**
 
-These allow extraction of basic physiological metrics directly from the signal.
+Heart rate is calculated from **RR intervals** between detected peaks.
+
+Future updates will include **Heart Rate Variability (HRV) analysis**.
 
 ---
 
-# 🏗️ System Architecture
+# System Architecture
 
 ```
-┌─────────────┐
-│  Signal File│
-│  (TXT/CSV)  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   Loader    │
-│ data.loader │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ Signal Model│
-│ Raw Signal  │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ FilterChain │
-│ DSP Filters │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ Feature     │
-│ Extraction  │
-│ (ECG Peaks) │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│ Visualization│
-│ PyQtGraph UI │
-└─────────────┘
+Signal File (TXT / CSV)
+        │
+        ▼
+   Data Loader
+        │
+        ▼
+   Signal Model
+     (Raw Data)
+        │
+        ▼
+   Filter Pipeline
+   (DSP Filters)
+        │
+        ▼
+   Feature Extraction
+   (ECG Peaks)
+        │
+        ▼
+   Visualization Layer
+   (PyQtGraph UI)
 ```
 
 ---
 
-# ⚙️ DSP Pipeline
+# DSP Processing Pipeline
 
 ```
 Raw Biosignal
@@ -185,55 +189,39 @@ Heart Rate Estimation
 
 ---
 
-# 🖥️ Application Interface
+# Application Interface
 
-The interface is divided into three main areas.
+The application interface consists of three main areas.
 
 ### Signal Viewer
 
 Displays:
 
-- Raw waveform
-- Filtered waveform
-- Detected heartbeats
-
----
+- Raw waveform  
+- Filtered waveform  
+- Detected heartbeats  
 
 ### Analysis Tabs
 
-- **Frequency Domain**
-- **Filter Response**
+Includes:
 
----
+- **Frequency Domain Analysis**
+- **Filter Response Visualization**
 
 ### Control Panel
 
 Allows configuration of:
 
-- Signal loading
-- Sampling rate
-- DSP filters
-- Pipeline application and reset
+- Signal loading  
+- Sampling rate  
+- DSP filters  
+- Pipeline application and reset  
 
 ---
 
-# 📸 Screenshots
+# Installation
 
-### Signal Viewer
-
-![Signal Viewer](assets/ss1.png)
-
----
-
-### Analysis Panels
-
-![Analysis Panels](assets/ss2.png)
-
----
-
-# 🚀 Installation
-
-## 1. Clone the repository
+## Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/biosignal-dsp-studio.git
@@ -242,7 +230,7 @@ cd biosignal-dsp-studio
 
 ---
 
-## 2. Create a virtual environment
+## Create a virtual environment
 
 ```bash
 python -m venv venv
@@ -264,7 +252,7 @@ venv\Scripts\activate
 
 ---
 
-## 3. Install dependencies
+## Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -280,7 +268,7 @@ Required packages include:
 
 ---
 
-# ▶️ Running the Application
+# Running the Application
 
 Start the application:
 
@@ -288,23 +276,17 @@ Start the application:
 python main.py
 ```
 
-Workflow:
+Typical workflow:
 
-1. Click **Load Signal**
-2. Select a biosignal file
-3. Configure DSP parameters
-4. Apply the pipeline
-
-The application will display:
-
-- Time-domain waveform
-- FFT spectrum
-- Filter response
-- Detected ECG peaks
+1. Load a biosignal file  
+2. Configure DSP filters  
+3. Apply the filter pipeline  
+4. Inspect the signal in time and frequency domains  
+5. Observe detected ECG peaks and estimated heart rate  
 
 ---
 
-# 🗂️ Project Structure
+# Project Structure
 
 ```
 biosignal-dsp-studio
@@ -338,45 +320,43 @@ biosignal-dsp-studio
 
 ---
 
-# 📌 Current Status
+# Current Status
 
-Implemented:
+Implemented features:
 
-- Signal loading
-- Time window extraction
-- Configurable DSP pipeline
-- Time-domain visualization
-- FFT analysis
-- Filter response visualization
-- ECG R-peak detection
-- Heart rate estimation
-- Interactive PyQt interface
+- Signal loading  
+- Time window extraction  
+- Configurable DSP pipeline  
+- Time-domain visualization  
+- FFT spectrum analysis  
+- Filter response visualization  
+- ECG R-peak detection  
+- Heart rate estimation  
+- Interactive PyQt interface  
 
 ---
 
-# 🔭 Future Improvements
+# Future Improvements
 
 Planned enhancements:
 
-- Multiple filter chains
-- ECG preprocessing presets
-- Signal navigation slider
-- EEG / EMG processing modules
-- Heart rate variability (HRV) metrics - ON DEVELOPMENT
-- Export filtered signals
-- Real-time signal streaming
+- Multiple filter chains  
+- ECG preprocessing presets  
+- Signal navigation slider  
+- EEG / EMG processing modules  
+- Heart Rate Variability (HRV) metrics  
+- Export filtered signals  
+- Real-time signal streaming  
 
 ---
 
-# 🎯 Purpose
+# Purpose
 
 This project serves as a **learning and experimentation platform** for:
 
-- Digital signal processing
-- Biomedical signal analysis
-- Scientific visualization
-- Interactive signal exploration
+- Digital signal processing  
+- Biomedical signal analysis  
+- Scientific visualization  
+- Interactive signal exploration  
 
-It combines **DSP, UI development, and biomedical signal processing** into a modular toolkit.
-
----
+It combines **DSP, UI development, and biomedical signal processing** into a modular analysis toolkit.
