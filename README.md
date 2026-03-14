@@ -21,11 +21,47 @@ The goal of the project is to explore and apply **classical digital signal proce
 
 # Screenshots
 
-### Signal Viewer
+### Full Application Interface
 
-![Signal Viewer](assets/ss1.png)
+![Application Interface](assets/app_default_view.png)
 
-Displays the time-domain waveform with filtered signals and detected ECG R-peaks.
+The default workspace showing the signal viewer, DSP controls, and analysis panels.  
+Users can load signals, configure filter chains, and inspect results within a single interface.
+
+---
+
+### Frequency Spectrum Analysis
+
+![Frequency Spectrum](assets/frequency_response_base.png)
+
+FFT visualization of the raw biosignal, showing the spectral distribution of the signal before filtering.
+
+---
+
+### Filtered Frequency Response
+
+![Filtered Spectrum](assets/frequency_response_filtered.png)
+
+Frequency-domain view after applying filters in the DSP pipeline.  
+This allows inspection of how the filter chain suppresses noise and isolates relevant signal bands.
+
+---
+
+### Filter Pipeline Visualization
+
+![Filter Pipeline](assets/filter_pipeline.png)
+
+Visualization of the **sequential filter stack** applied to the signal.  
+Each stage modifies the signal before passing it to the next stage, allowing compound filtering strategies such as baseline removal followed by noise suppression.
+
+---
+
+### Heart Rate Detection
+
+![Heart Rate Detection](assets/heart_rate_detection.png)
+
+ECG waveform with detected **R-peaks** highlighted across a 20-second segment.  
+Heart rate is computed from RR intervals, forming the basis for future **Heart Rate Variability (HRV)** analysis.
 
 ---
 
