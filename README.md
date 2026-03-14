@@ -32,15 +32,7 @@ Users can load signals, configure filter chains, and inspect results within a si
 
 ### Frequency Spectrum Analysis
 
-![Frequency Spectrum](assets/frequency_response_base.png)
-
-FFT visualization of the raw biosignal, showing the spectral distribution of the signal before filtering.
-
----
-
-### Filtered Frequency Response
-
-![Filtered Spectrum](assets/frequency_response_filtered.png)
+![Filtered Spectrum](assets/ss2.png)
 
 Frequency-domain view after applying filters in the DSP pipeline.  
 This allows inspection of how the filter chain suppresses noise and isolates relevant signal bands.
@@ -67,8 +59,8 @@ Heart rate is computed from RR intervals, forming the basis for future **Heart R
 
 ### Analysis Panels
 
-![Analysis Panels](assets/ss2.png)
-
+![Analysis Panel A](assets/frequency_response_base.png)
+![Analysis Panels B](assets/frequency_response_filtered.png)
 Frequency-domain analysis and filter response visualization for the active DSP pipeline.
 
 ---
